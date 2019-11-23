@@ -1,9 +1,10 @@
 cmake_minimum_required (VERSION 3.5)
-project(linalg)
+project(model_converter)
 
 file(GLOB SOURCES
-    "*.hpp"
-    "*.cpp"
+    "main.cpp"
+    "**/*.hpp"
+    "**/*.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
