@@ -26,7 +26,7 @@ sudo apt-get install cmake make libglm-dev
 cd shaper
 mkdir build && cd build
 cmake ..
-make
+make -j8
 ```
 
 ### Running the tests
