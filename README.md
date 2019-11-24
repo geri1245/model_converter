@@ -1,4 +1,4 @@
-# OBJ to Binary STL converter
+# OBJ to Binary STL converter for Linux
 
 The file formats are based on the following references:
 

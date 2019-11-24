@@ -5,6 +5,7 @@
 #include <glm/gtx/transform.hpp>
 
 #include "Computations.hpp"
+#include "AssertionHelper.hpp"
 
 TEST_CASE("intersection", "[RayIntersectsTriangle]") {
   const std::array<glm::vec3, 3> triangle = {glm::vec3{0, 0, 0}, glm::vec3{2, 0, 0}, glm::vec3{0, 2, 0}};
@@ -15,7 +16,7 @@ TEST_CASE("intersection", "[RayIntersectsTriangle]") {
   bool intersects = RayIntersectsTriangle(origin, ray_dir, triangle, intersection_point);
 
   REQUIRE(intersects);
-  REQUIRE(intersection_point == glm::vec3{0.8, 0.4, 0});
+  REQUIRE(vec_almost_equal(intersection_point, glm::vec3{0.8, 0.4, 0}));
 }
 
 TEST_CASE("intersection_3D_point", "[RayIntersectsTriangle]") {
@@ -102,15 +103,15 @@ TEST_CASE("cube_intersections", "[num_of_intersections, is_point_inside_model]")
     REQUIRE(!is_point_inside_model(glm::vec3{0.4, 0.32, 21.7}, model));
   }
 
-  SECTION("cube_area") { REQUIRE(surface_area(model) == 6); }
+  SECTION("cube_area") { REQUIRE(float_almost_equal(surface_area(model), 6)); }
 }
 
 TEST_CASE("simple_triangles", "[area_of_triangle]") {
   std::array<glm::vec3, 3> triangle = {glm::vec3{0, 0, 0}, glm::vec3{1, 0, 0}, glm::vec3{0, 3, 0}};
-  REQUIRE(area_of_triangle(triangle) == 1.5);
+  REQUIRE( float_almost_equal(area_of_triangle(triangle), 1.5));
 
   triangle = std::array<glm::vec3, 3>{glm::vec3{1, 0, 0}, glm::vec3{1, 1, 0}, glm::vec3{1, 1, 2}};
-  REQUIRE(area_of_triangle(triangle) == 1.0);
+  REQUIRE(float_almost_equal(area_of_triangle(triangle), 1.0));
 }
 
 TEST_CASE("transformations", "[transformations]") {
@@ -121,28 +122,28 @@ TEST_CASE("transformations", "[transformations]") {
   SECTION("translate") {
     transform(model, glm::translate(glm::vec3(1, 4, 2.23)));
 
-    REQUIRE(model.positions[0] == glm::vec4{3, 5, 2.23, 1});
-    REQUIRE(model.positions[1] == glm::vec4{4, 4, 5.23, 1});
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4{3, 5, 2.23, 1}));
+    REQUIRE(vec_almost_equal(model.positions[1], glm::vec4{4, 4, 5.23, 1}));
   }
 
   SECTION("rotate") {
     transform(model, glm::rotate(glm::pi<float>(), glm::vec3{0, 1, 0}));
 
-    REQUIRE(length(model.positions[0] - glm::vec4{-2, 1, 0, 1}) < 0.00001);
-    REQUIRE(length(model.positions[1] - glm::vec4{-3.0, 0.0, -3.0, 1.0}) < 0.00001);
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4{-2, 1, 0, 1}));
+    REQUIRE(vec_almost_equal(model.positions[1], glm::vec4{-3.0, 0.0, -3.0, 1.0}));
   }
 
   SECTION("scale") {
     transform(model, glm::scale(glm::vec3{2, 0.5, 1}));
 
-    REQUIRE(model.positions[0] == glm::vec4{4, 0.5, 0, 1});
-    REQUIRE(model.positions[1] == glm::vec4{6, 0, 3, 1});
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4{4, 0.5, 0, 1}));
+    REQUIRE(vec_almost_equal(model.positions[1], glm::vec4{6, 0, 3, 1}));
   }
 
   SECTION("combined") {
     transform(model, glm::scale(glm::vec3{2, 3, 1}) * glm::translate(glm::vec3{1, 0, -1}));
 
-    REQUIRE(model.positions[0] == glm::vec4{6, 3, -1, 1});
-    REQUIRE(model.positions[1] == glm::vec4{8, 0, 2, 1});
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4{6, 3, -1, 1}));
+    REQUIRE(vec_almost_equal(model.positions[1], glm::vec4{8, 0, 2, 1}));
   }
 }

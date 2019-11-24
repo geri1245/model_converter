@@ -10,6 +10,7 @@
 #define OBJ_PARSER_UNITTEST
 
 #include "ObjParser.hpp"
+#include "AssertionHelper.hpp"
 
 class ObjParserTest {
  public:
@@ -45,28 +46,28 @@ TEST_CASE("process_line", "[process_line]") {
     success = test.process_line("v      -5.000000       5.000000       0.000000", model);
     REQUIRE(success);
     REQUIRE(model.positions.size() == 1);
-    REQUIRE(model.positions[0] == glm::vec4(-5, 5, 0, 1));
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4(-5, 5, 0, 1)));
   }
 
   SECTION("Correct_positions_4_components") {
     success = test.process_line("v      -5.000000       5.000000       0.000000   2.500000", model);
     REQUIRE(success);
     REQUIRE(model.positions.size() == 1);
-    REQUIRE(model.positions[0] == glm::vec4(-5, 5, 0, 2.5));
+    REQUIRE(vec_almost_equal(model.positions[0], glm::vec4(-5, 5, 0, 2.5)));
   }
 
   SECTION("Correct_texture") {
     success = test.process_line("vt     -5.000000      -5.000000       0.000000", model);
     REQUIRE(success);
     REQUIRE(model.texture_coords.size() == 1);
-    REQUIRE(model.texture_coords[0] == glm::vec3(-5, -5, 0));
+    REQUIRE(vec_almost_equal(model.texture_coords[0], glm::vec3(-5, -5, 0)));
   }
 
   SECTION("Correct_normal") {
     success = test.process_line("vn      12.000000       1.210000       1.000000", model);
     REQUIRE(success);
     REQUIRE(model.normals.size() == 1);
-    REQUIRE(model.normals[0] == glm::vec3(12, 1.21, 1));
+    REQUIRE(vec_almost_equal(model.normals[0], glm::vec3(12, 1.21, 1)));
   }
 
   SECTION("Correct_faces") {
@@ -130,10 +131,10 @@ f 1/1/1 2/2/2 3/4/6
     REQUIRE(result->normals.size() == 1);
     REQUIRE(result->triangular_faces.size() == 1);
 
-    REQUIRE(result->positions[0] == glm::vec4{12.0, 11.23, 32.42, 1.0});
-    REQUIRE(result->positions[1] == glm::vec4{1.12, 1.233, 12.76, 1.0});
-    REQUIRE(result->texture_coords[0] == glm::vec3{0.23, 0.34, 0.0});
-    REQUIRE(result->normals[0] == glm::vec3{1.01, 2.12, 0.12});
+    REQUIRE(vec_almost_equal(result->positions[0], glm::vec4{12.0, 11.23, 32.42, 1.0}));
+    REQUIRE(vec_almost_equal(result->positions[1], glm::vec4{1.12, 1.233, 12.76, 1.0}));
+    REQUIRE(vec_almost_equal(result->texture_coords[0], glm::vec3{0.23, 0.34, 0.0}));
+    REQUIRE(vec_almost_equal(result->normals[0], glm::vec3{1.01, 2.12, 0.12}));
     REQUIRE(result->triangular_faces[0] ==
             std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 1}, glm::ivec3{2, 3, 5}});
   }
@@ -263,9 +264,9 @@ TEST_CASE("read_numbers_successful", "[read_numbers]") {
 
     REQUIRE(result);
     REQUIRE(*result == 3);
-    REQUIRE(container[0] == 3.1415);
-    REQUIRE(container[1] == 2.23);
-    REQUIRE(container[2] == 1.43);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], 1.43));
   }
 
   SECTION("upper_part_of_interval") {
@@ -274,9 +275,9 @@ TEST_CASE("read_numbers_successful", "[read_numbers]") {
 
     REQUIRE(result);
     REQUIRE(*result == 3);
-    REQUIRE(container[0] == 3.1415);
-    REQUIRE(container[1] == 2.23);
-    REQUIRE(container[2] == -1.43);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], -1.43));
   }
 
   SECTION("lower_part_of_interval") {
@@ -285,7 +286,7 @@ TEST_CASE("read_numbers_successful", "[read_numbers]") {
 
     REQUIRE(result);
     REQUIRE(*result == 1);
-    REQUIRE(container[0] == -3.1415);
+    REQUIRE(float_almost_equal(container[0], -3.1415));
   }
 
   SECTION("middle_of_interval") {
@@ -294,9 +295,9 @@ TEST_CASE("read_numbers_successful", "[read_numbers]") {
 
     REQUIRE(result);
     REQUIRE(*result == 3);
-    REQUIRE(container[0] == 3.1415);
-    REQUIRE(container[1] == 2.23);
-    REQUIRE(container[2] == 1.43);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], 1.43));
   }
 }
 
@@ -310,7 +311,7 @@ TEST_CASE("read_numbers_unsuccessful", "[read_numbers]") {
     auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
 
     REQUIRE(!result);
-    REQUIRE(container[0] == 3.1415);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
   }
 
   SECTION("non_number_characters") {
@@ -318,7 +319,7 @@ TEST_CASE("read_numbers_unsuccessful", "[read_numbers]") {
     auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
 
     REQUIRE(!result);
-    REQUIRE(container[0] == 3.1415);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
   }
 
   SECTION("too_many_numbers_read") {
@@ -326,8 +327,8 @@ TEST_CASE("read_numbers_unsuccessful", "[read_numbers]") {
     auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
 
     REQUIRE(!result);
-    REQUIRE(container[0] == 3.1415);
-    REQUIRE(container[1] == 2);
-    REQUIRE(container[2] == 3);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2));
+    REQUIRE(float_almost_equal(container[2], 3));
   }
 }
