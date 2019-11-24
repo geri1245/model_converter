@@ -1,5 +1,5 @@
-#ifndef OBJ_PARSER_HPP
-#define OBJ_PARSER_HPP
+#ifndef PARSER_OBJ_PARSER_HPP
+#define PARSER_OBJ_PARSER_HPP
 
 #include <fstream>
 #include <iostream>
@@ -19,16 +19,16 @@ class ObjParser : public ModelParser {
   friend class ObjParserTest;
 #endif
   // Reads input stream line-by-line and calls process_line on each line
-  virtual std::optional<Model> parse_file(std::istream& in) final override;
+  inline virtual std::optional<Model> parse_file(std::istream& in) final override;
 
   // Process a line. Update model, if it needs to based on the contents of the line
-  bool process_line(std::string&& line, Model& model);
+  inline bool process_line(std::string&& line, Model& model);
 
   // Processes the faces part of a line containing faces ("f 1 2 3" -> processes "1 2 3")
-  std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string);
+  inline std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string);
 
   // Checks if the result of process_faces is correct. It's only called by process_faces
-  bool check_faces_vector_syntax(const std::vector<glm::ivec3> faces_vec);
+  inline bool check_faces_vector_syntax(const std::vector<glm::ivec3> faces_vec);
 
   // Tries to read at least min, at most max numbers from text into container
   // Returns the number of arguments successfully read

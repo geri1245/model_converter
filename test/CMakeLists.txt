@@ -20,4 +20,7 @@ add_dependencies(${PROJECT_NAME} model_converter)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Parser")
 target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Computations")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Converter")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Printer")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Types")
 target_include_directories(${PROJECT_NAME} PUBLIC "${THIRDPARTY_DIR}")

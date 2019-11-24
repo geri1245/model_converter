@@ -5,6 +5,7 @@
 #include "ModelParser.hpp"
 #include "ObjParser.hpp"
 #include "STLPrinter.hpp"
+#include "ModelConverter.hpp"
 
 namespace {
 const std::string usage_text = R"(
@@ -30,15 +31,7 @@ int main(int argc, const char* argv[]) {
   const std::string file_path   = argv[1];
   const std::string result_path = argc < 3 ? "./out.stl" : argv[2];
 
-  auto obj_parser = std::make_unique<ObjParser>();
-  auto result     = obj_parser->parse(file_path);
-
-  if (!result) {
-    std::cerr << "Failed to parse file: " << file_path << "\n";
-    return -1;
-  }
-
-  auto stl_printer = std::make_unique<STLPrinter>();
-
-  stl_printer->print(*result, result_path);
+  ModelConverter converter{std::make_unique<ObjParser>(), std::make_unique<STLPrinter>()};
+  converter.parse(file_path);
+  converter.print(result_path);
 }
