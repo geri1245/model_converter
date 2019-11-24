@@ -3,6 +3,7 @@
 #include <iterator>
 #include <memory>
 #include <sstream>
+#include <optional>
 
 #include "catch/catch.hpp"
 
@@ -184,6 +185,18 @@ TEST_CASE("correct_faces", "[process_faces]") {
     REQUIRE((*result)[0] == glm::ivec3{1, 2,  0});
     REQUIRE((*result)[1] == glm::ivec3{7, 4,  0});
     REQUIRE((*result)[2] == glm::ivec3{2, 34, 0});
+  }
+
+  SECTION("only_positions") {
+    const std::string faces = "1 7 3 45";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(result);
+    REQUIRE(result->size() == 4);
+
+    REQUIRE((*result)[0] == glm::ivec3{1, 0, 0});
+    REQUIRE((*result)[1] == glm::ivec3{7, 0, 0});
+    REQUIRE((*result)[2] == glm::ivec3{3, 0, 0});
+    REQUIRE((*result)[3] == glm::ivec3{45, 0, 0});
   }
 }
 

@@ -11,6 +11,7 @@ file(GLOB SOURCES
     "${SRC_DIR}/**/*.hpp"
 )
 
+# Remove src/main to avoid conflict with the main function in test
 list(REMOVE_ITEM SOURCES "${SRC_DIR}/main.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${TEST_SOURCES})

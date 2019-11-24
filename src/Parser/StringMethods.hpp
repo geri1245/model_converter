@@ -8,7 +8,9 @@
 #include <string_view>
 #include <vector>
 
+// Splits text at separator
 inline std::vector<std::string> split_at(const std::string_view& text, const char separator);
+// Split text at separator, but duplicated separators and separators at the end/start of text are removed
 inline std::vector<std::string> split_at_trim_separators(const std::string_view& text, const char separator);
 
 // Tries to read a number from text and returns an optional (value, characters_processed) pair

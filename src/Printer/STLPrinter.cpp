@@ -15,6 +15,7 @@ std::ostream& operator<<(std::ostream& out, const glm::vec3& vec) {
 }
 
 // Same as vec3, we just ignore the fourth parameter
+// If homogenous coordinate support is desired, we could divide each element by the w component
 std::ostream& operator<<(std::ostream& out, const glm::vec4& vec) {
   out.write(reinterpret_cast<const char*>(&vec.x), sizeof(float));
   out.write(reinterpret_cast<const char*>(&vec.y), sizeof(float));
@@ -30,6 +31,7 @@ bool STLPrinter::print(const Model& model, const std::string& path) {
     return false;
   }
 
+  uint16_t attrib_byte_cnt = 0;
   std::ofstream& out = *open_result;
 
   std::array<char, 80> header;
@@ -42,10 +44,10 @@ bool STLPrinter::print(const Model& model, const std::string& path) {
 
   for (const auto& face : model.triangular_faces) {
     // Take the normal vector of the first vertex of the triangle
+    // All 3 should have the same normal vector
     out << model.normals[face[0].z];
     out << model.positions[face[0].x] << model.positions[face[1].x] << model.positions[face[2].x];
 
-    uint16_t attrib_byte_cnt = 0;
     out.write(reinterpret_cast<const char*>(&attrib_byte_cnt), sizeof(uint16_t));
   }
 

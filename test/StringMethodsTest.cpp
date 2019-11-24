@@ -1,3 +1,6 @@
+#include <vector>
+#include <string>
+
 #include "catch/catch.hpp"
 
 #include "StringMethods.hpp"

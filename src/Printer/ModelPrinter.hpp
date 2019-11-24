@@ -2,7 +2,6 @@
 #define PRINTER_MODEL_PRINTER_HPP
 
 #include <string>
-#include <vector>
 #include <optional>
 #include <fstream>
 

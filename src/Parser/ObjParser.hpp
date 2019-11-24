@@ -1,7 +1,6 @@
 #ifndef OBJ_PARSER_HPP
 #define OBJ_PARSER_HPP
 
-#include <charconv>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -19,13 +18,22 @@ class ObjParser : public ModelParser {
 #ifdef OBJ_PARSER_UNITTEST
   friend class ObjParserTest;
 #endif
+  // Reads input stream line-by-line and calls process_line on each line
   virtual std::optional<Model> parse_file(std::istream& in) final override;
+
+  // Process a line. Update model, if it needs to based on the contents of the line
   bool process_line(std::string&& line, Model& model);
+
+  // Processes the faces part of a line containing faces ("f 1 2 3" -> processes "1 2 3")
   std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string);
+
+  // Checks if the result of process_faces is correct. It's only called by process_faces
   bool check_faces_vector_syntax(const std::vector<glm::ivec3> faces_vec);
 
   // Tries to read at least min, at most max numbers from text into container
   // Returns the number of arguments successfully read
+  // Whitespaces are discarded at the beginning of each number, but any extra characters at the end
+  // will cause this function to fail
   template <class Container>
   std::optional<std::size_t> read_numbers(const std::string& text,
                                           std::size_t text_position,
@@ -60,7 +68,7 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
   bool success          = true;
   auto first_whitespace = line.find_first_of(' ');
 
-  const std::string_view line_label{line.c_str(), first_whitespace};
+  const std::string_view line_label{line.data(), first_whitespace};
 
   if (line_label == "v") {
     glm::vec4 position;
@@ -69,13 +77,16 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
     std::size_t min = 3;
     std::size_t max = 4;
 
-    std::optional<std::size_t> numbers_read = read_numbers(line, first_whitespace, position, min, max);
+    auto result = read_numbers(line, first_whitespace, position, min, max);
 
-    success = numbers_read && *numbers_read >= min && *numbers_read <= max;
-    if (success) {
+    if (result) {
       model.positions.push_back(std::move(position));
+    } else {
+      success = false;
     }
-  } else if (line_label == "vt") {
+  }
+
+  else if (line_label == "vt") {
     glm::vec3 texture;
     // Y and Z are optional, their default is 0
     texture.y       = 0.0;
@@ -83,31 +94,37 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
     std::size_t min = 1;
     std::size_t max = 3;
 
-    std::optional<std::size_t> numbers_read = read_numbers(line, first_whitespace, texture, min, max);
+    std::optional<std::size_t> result = read_numbers(line, first_whitespace, texture, min, max);
 
-    success = numbers_read && *numbers_read >= min && *numbers_read <= max;
-    if (success) {
+    if (result) {
       model.texture_coords.push_back(std::move(texture));
+    } else {
+      success = false;
     }
-  } else if (line_label == "vn") {
+  }
+
+  else if (line_label == "vn") {
     glm::vec3 normals;
     std::size_t min = 3;
     std::size_t max = 3;
 
-    std::optional<std::size_t> numbers_read = read_numbers(line, first_whitespace, normals, min, max);
+    std::optional<std::size_t> result = read_numbers(line, first_whitespace, normals, min, max);
 
-    success = numbers_read && *numbers_read >= min && *numbers_read <= max;
-    if (success) {
+    if (result) {
       model.normals.push_back(std::move(normals));
+    } else {
+      success = false;
     }
-  } else if (line_label == "f") {
+  }
+
+  else if (line_label == "f") {
     auto result = process_faces(std::string_view{line.data() + first_whitespace, line.size() - first_whitespace});
 
     if (!result) {
       std::cerr << "Error processing faces\n";
       success = false;
     } else if (result) {
-      // Preprocess all indices: if they are negative, transform them based on positions/normals/teytures size
+      // Preprocess all indices: if they are negative, transform them based on positions/normals/textures size
       // If they are positive or 0, subtract 1 from each to convert 1-based indices to 0-based
       // If the index was 0 (indicates missing value), then it becomes -1, which is not valid for vector indexing
       // So in the final representation -1 will indicate missing values
@@ -132,6 +149,7 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
       }
 
       // Non-triangular faces are handled by using "triangle-fan": inedx 0 is always present
+      // This way we can handle arbitrary number of face data on a single line
       for (std::size_t i = 1; i + 1 < result->size(); ++i) {
         model.triangular_faces.push_back({(*result)[0], (*result)[i], (*result)[i + 1]});
       }
@@ -160,7 +178,7 @@ std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::strin
       return std::nullopt;
     }
 
-    glm::ivec3 vertex_data;
+    glm::ivec3 vertex_data(0);
 
     for (std::size_t i = 0; i < indices.size(); ++i) {
       if (indices[i].empty()) {
@@ -176,7 +194,7 @@ std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::strin
     faces_result.push_back(std::move(vertex_data));
   }
 
-  if(!check_faces_vector_syntax(faces_result)) {
+  if (!check_faces_vector_syntax(faces_result)) {
     return std::nullopt;
   }
 
@@ -203,7 +221,7 @@ bool ObjParser::check_faces_vector_syntax(const std::vector<glm::ivec3> faces_ve
   // zero, then the syntax is incorrect and we return false
   for (const auto& triplet : faces_vec) {
     // Position can't be missing
-    if(triplet.x == 0) {
+    if (triplet.x == 0) {
       return false;
     }
     for (glm::size_t i = 1; i < faces_vec[0].length(); ++i) {

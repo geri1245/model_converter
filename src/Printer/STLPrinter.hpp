@@ -2,9 +2,6 @@
 #define PRINTER_STL_PRINTER_HPP
 
 #include <string>
-#include <vector>
-#include <optional>
-#include <fstream>
 
 #include "ModelPrinter.hpp"
 #include "../Types/Model.hpp"
