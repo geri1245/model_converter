@@ -32,7 +32,7 @@ bool STLPrinter::print(const Model& model, const std::string& path) {
   }
 
   uint16_t attrib_byte_cnt = 0;
-  std::ofstream& out = *open_result;
+  std::ofstream& out       = *open_result;
 
   std::array<char, 80> header;
   header.fill(' ');

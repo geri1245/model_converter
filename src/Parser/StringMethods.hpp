@@ -17,6 +17,17 @@ inline std::vector<std::string> split_at_trim_separators(const std::string_view&
 template <class Result>
 std::optional<std::pair<Result, std::size_t>> get_number_from_string(const std::string& text);
 
+// Tries to read at least min, at most max numbers from text into container
+// Returns the number of arguments successfully read
+// Whitespaces are discarded at the beginning of each number, but any extra characters at the end
+// will cause this function to fail
+template <class Container>
+std::optional<std::size_t> read_numbers(const std::string& text,
+                                        std::size_t text_position,
+                                        Container& container,
+                                        const std::size_t min,
+                                        const std::size_t max);
+
 
 inline std::vector<std::string> split_at(const std::string_view& text, const char separator) {
   std::vector<std::string> tokens;
@@ -83,6 +94,40 @@ std::optional<std::pair<Result, std::size_t>> get_number_from_string(const std::
   // }
 
   return std::make_pair(result, chars_processed);
+}
+
+template <class Container>
+std::optional<std::size_t> read_numbers(const std::string& text,
+                                        std::size_t text_position,
+                                        Container& container,
+                                        const std::size_t min,
+                                        const std::size_t max) {
+  std::size_t numbers_read         = 0;
+  std::size_t part_to_process_next = text_position;
+
+  // Read the first 3 coordinates
+  while (numbers_read < max && part_to_process_next < text.size()) {
+    if (part_to_process_next < text.size()) {
+      auto result = get_number_from_string<double>(std::string{text, part_to_process_next});
+      if (result) {
+        container[numbers_read] = result->first;
+        part_to_process_next += result->second;
+        ++numbers_read;
+      } else {
+        // Something went wrong while reading numbers
+        return std::nullopt;
+      }
+    } else {
+      // We reached the end before we should have, there was an error
+      return std::nullopt;
+    }
+  }
+
+  if (numbers_read < min || numbers_read > max || part_to_process_next != text.size()) {
+    return std::nullopt;
+  }
+
+  return numbers_read;
 }
 
 #endif

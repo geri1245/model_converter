@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "ModelPrinter.hpp"
 #include "../Types/Model.hpp"
+#include "ModelPrinter.hpp"
 
 class STLPrinter : public ModelPrinter {
-public:
+ public:
   virtual bool print(const Model& model, const std::string& path) override final;
 
   virtual ~STLPrinter() {}

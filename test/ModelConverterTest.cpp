@@ -1,8 +1,8 @@
 #include "catch/catch.hpp"
 
+#include "ModelConverter.hpp"
 #include "ObjParser.hpp"
 #include "STLPrinter.hpp"
-#include "ModelConverter.hpp"
 
 TEST_CASE("parser", "[ModelConverter]") {
   ModelConverter converter{std::make_unique<ObjParser>(), std::make_unique<STLPrinter>()};

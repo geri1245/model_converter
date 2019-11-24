@@ -2,10 +2,10 @@
 #include <memory>
 
 #include "Model.hpp"
+#include "ModelConverter.hpp"
 #include "ModelParser.hpp"
 #include "ObjParser.hpp"
 #include "STLPrinter.hpp"
-#include "ModelConverter.hpp"
 
 namespace {
 const std::string usage_text = R"(

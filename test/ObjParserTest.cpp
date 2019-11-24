@@ -2,15 +2,15 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <sstream>
 #include <optional>
+#include <sstream>
 
 #include "catch/catch.hpp"
 
 #define OBJ_PARSER_UNITTEST
 
-#include "ObjParser.hpp"
 #include "AssertionHelper.hpp"
+#include "ObjParser.hpp"
 
 class ObjParserTest {
  public:
@@ -22,15 +22,6 @@ class ObjParserTest {
 
   std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string) {
     return obj_parser->process_faces(faces_string);
-  }
-
-  template <class Container>
-  std::optional<int> read_numbers(const std::string& text,
-                                  std::size_t text_position,
-                                  Container& container,
-                                  const std::size_t min,
-                                  const std::size_t max) {
-    return obj_parser->read_numbers(text, text_position, container, min, max);
   }
 
  private:
@@ -183,8 +174,8 @@ TEST_CASE("correct_faces", "[process_faces]") {
     REQUIRE(result);
     REQUIRE(result->size() == 3);
 
-    REQUIRE((*result)[0] == glm::ivec3{1, 2,  0});
-    REQUIRE((*result)[1] == glm::ivec3{7, 4,  0});
+    REQUIRE((*result)[0] == glm::ivec3{1, 2, 0});
+    REQUIRE((*result)[1] == glm::ivec3{7, 4, 0});
     REQUIRE((*result)[2] == glm::ivec3{2, 34, 0});
   }
 
@@ -212,13 +203,13 @@ TEST_CASE("incorrect_faces", "[process_faces]") {
 
   SECTION("missing_position") {
     const std::string faces = "/2/3 /9/3 /3/9";
-    const auto result = test.process_faces(faces);
+    const auto result       = test.process_faces(faces);
     REQUIRE(!result);
   }
 
   SECTION("different_format") {
     const std::string faces = "23/2/3 423/9/ 53//9";
-    const auto result = test.process_faces(faces);
+    const auto result       = test.process_faces(faces);
     REQUIRE(!result);
   }
 }
@@ -250,85 +241,5 @@ TEST_CASE("process_incorect_line", "[process_line]") {
   SECTION("Junk_in_the_middle") {
     success = test.process_line("v      -5.000000       5.000000   asd    0.000000   2.500000", model);
     REQUIRE(!success);
-  }
-}
-
-TEST_CASE("read_numbers_successful", "[read_numbers]") {
-  ObjParserTest test;
-  std::vector<double> container;
-  container.resize(3);
-
-  SECTION("multiple_numbers_with whitespaces") {
-    const std::string str_to_process{"3.1415    2.23    1.43"};
-    auto result = test.read_numbers(str_to_process, 0, container, 3, 3);
-
-    REQUIRE(result);
-    REQUIRE(*result == 3);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-    REQUIRE(float_almost_equal(container[1], 2.23));
-    REQUIRE(float_almost_equal(container[2], 1.43));
-  }
-
-  SECTION("upper_part_of_interval") {
-    const std::string str_to_process{"3.1415    2.23    -1.43"};
-    auto result = test.read_numbers(str_to_process, 0, container, 1, 3);
-
-    REQUIRE(result);
-    REQUIRE(*result == 3);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-    REQUIRE(float_almost_equal(container[1], 2.23));
-    REQUIRE(float_almost_equal(container[2], -1.43));
-  }
-
-  SECTION("lower_part_of_interval") {
-    const std::string str_to_process{"        -3.1415"};
-    auto result = test.read_numbers(str_to_process, 0, container, 1, 3);
-
-    REQUIRE(result);
-    REQUIRE(*result == 1);
-    REQUIRE(float_almost_equal(container[0], -3.1415));
-  }
-
-  SECTION("middle_of_interval") {
-    const std::string str_to_process{"3.1415    2.23    1.43"};
-    auto result = test.read_numbers(str_to_process, 0, container, 2, 4);
-
-    REQUIRE(result);
-    REQUIRE(*result == 3);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-    REQUIRE(float_almost_equal(container[1], 2.23));
-    REQUIRE(float_almost_equal(container[2], 1.43));
-  }
-}
-
-TEST_CASE("read_numbers_unsuccessful", "[read_numbers]") {
-  ObjParserTest test;
-  std::vector<double> container;
-  container.resize(4);
-
-  SECTION("too_few_numbers_read") {
-    const std::string str_to_process{"3.1415"};
-    auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
-
-    REQUIRE(!result);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-  }
-
-  SECTION("non_number_characters") {
-    const std::string str_to_process{"3.1415 a"};
-    auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
-
-    REQUIRE(!result);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-  }
-
-  SECTION("too_many_numbers_read") {
-    const std::string str_to_process{"3.1415 2 3 4"};
-    auto result = test.read_numbers(str_to_process, 0, container, 2, 3);
-
-    REQUIRE(!result);
-    REQUIRE(float_almost_equal(container[0], 3.1415));
-    REQUIRE(float_almost_equal(container[1], 2));
-    REQUIRE(float_almost_equal(container[2], 3));
   }
 }

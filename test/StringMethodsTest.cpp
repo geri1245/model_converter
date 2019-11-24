@@ -1,8 +1,9 @@
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "catch/catch.hpp"
 
+#include "AssertionHelper.hpp"
 #include "StringMethods.hpp"
 
 
@@ -134,5 +135,83 @@ TEST_CASE("unsuccessful_get_number_from_string", "[get_number_from_string]") {
     auto result = get_number_from_string<double>(str_to_process);
 
     REQUIRE(!result);
+  }
+}
+
+TEST_CASE("read_numbers_successful", "[read_numbers]") {
+  std::vector<double> container;
+  container.resize(3);
+
+  SECTION("multiple_numbers_with whitespaces") {
+    const std::string str_to_process{"3.1415    2.23    1.43"};
+    auto result = read_numbers(str_to_process, 0, container, 3, 3);
+
+    REQUIRE(result);
+    REQUIRE(*result == 3);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], 1.43));
+  }
+
+  SECTION("upper_part_of_interval") {
+    const std::string str_to_process{"3.1415    2.23    -1.43"};
+    auto result = read_numbers(str_to_process, 0, container, 1, 3);
+
+    REQUIRE(result);
+    REQUIRE(*result == 3);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], -1.43));
+  }
+
+  SECTION("lower_part_of_interval") {
+    const std::string str_to_process{"        -3.1415"};
+    auto result = read_numbers(str_to_process, 0, container, 1, 3);
+
+    REQUIRE(result);
+    REQUIRE(*result == 1);
+    REQUIRE(float_almost_equal(container[0], -3.1415));
+  }
+
+  SECTION("middle_of_interval") {
+    const std::string str_to_process{"3.1415    2.23    1.43"};
+    auto result = read_numbers(str_to_process, 0, container, 2, 4);
+
+    REQUIRE(result);
+    REQUIRE(*result == 3);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2.23));
+    REQUIRE(float_almost_equal(container[2], 1.43));
+  }
+}
+
+TEST_CASE("read_numbers_unsuccessful", "[read_numbers]") {
+  std::vector<double> container;
+  container.resize(4);
+
+  SECTION("too_few_numbers_read") {
+    const std::string str_to_process{"3.1415"};
+    auto result = read_numbers(str_to_process, 0, container, 2, 3);
+
+    REQUIRE(!result);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+  }
+
+  SECTION("non_number_characters") {
+    const std::string str_to_process{"3.1415 a"};
+    auto result = read_numbers(str_to_process, 0, container, 2, 3);
+
+    REQUIRE(!result);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+  }
+
+  SECTION("too_many_numbers_read") {
+    const std::string str_to_process{"3.1415 2 3 4"};
+    auto result = read_numbers(str_to_process, 0, container, 2, 3);
+
+    REQUIRE(!result);
+    REQUIRE(float_almost_equal(container[0], 3.1415));
+    REQUIRE(float_almost_equal(container[1], 2));
+    REQUIRE(float_almost_equal(container[2], 3));
   }
 }

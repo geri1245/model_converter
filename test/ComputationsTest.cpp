@@ -4,8 +4,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 
-#include "Computations.hpp"
 #include "AssertionHelper.hpp"
+#include "Computations.hpp"
 
 TEST_CASE("intersection", "[RayIntersectsTriangle]") {
   const std::array<glm::vec3, 3> triangle = {glm::vec3{0, 0, 0}, glm::vec3{2, 0, 0}, glm::vec3{0, 2, 0}};
@@ -108,7 +108,7 @@ TEST_CASE("cube_intersections", "[num_of_intersections, is_point_inside_model]")
 
 TEST_CASE("simple_triangles", "[area_of_triangle]") {
   std::array<glm::vec3, 3> triangle = {glm::vec3{0, 0, 0}, glm::vec3{1, 0, 0}, glm::vec3{0, 3, 0}};
-  REQUIRE( float_almost_equal(area_of_triangle(triangle), 1.5));
+  REQUIRE(float_almost_equal(area_of_triangle(triangle), 1.5));
 
   triangle = std::array<glm::vec3, 3>{glm::vec3{1, 0, 0}, glm::vec3{1, 1, 0}, glm::vec3{1, 1, 2}};
   REQUIRE(float_almost_equal(area_of_triangle(triangle), 1.0));

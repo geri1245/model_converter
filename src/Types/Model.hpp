@@ -1,9 +1,9 @@
 #ifndef TYPES_MODEL_REPR_HPP
 #define TYPES_MODEL_REPR_HPP
 
-#include <vector>
 #include <array>
 #include <iostream>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -25,5 +25,5 @@ std::ostream& operator<<(std::ostream& out, const glm::ivec3& vec);
 std::ostream& operator<<(std::ostream& out, const glm::vec4& vec);
 std::ostream& operator<<(std::ostream& out, const glm::vec3& vec);
 std::ostream& operator<<(std::ostream& out, const Model& model);
-}
+}  // namespace debug
 #endif
