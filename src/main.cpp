@@ -17,7 +17,7 @@ const std::string usage_text = R"(
     Example: ./model_converter ./cube.obj ../cube.stl
 
     This will read cube.obj and convert it to cube.stl, placing it into the parent directory
-  )";
+)";
 }
 
 int main(int argc, const char* argv[]) {
