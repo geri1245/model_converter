@@ -8,3 +8,7 @@ file(GLOB SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Types/")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Parser/")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Printer/")

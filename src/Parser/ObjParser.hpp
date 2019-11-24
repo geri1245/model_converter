@@ -104,6 +104,9 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
       std::cerr << "Error processing faces\n";
       success = false;
     } else if (result) {
+      // for(const auto & a : *result) {
+      //   std::cout << a << "\n";
+      // }
       for (std::size_t i = 1; i + 1 < result->size(); ++i) {
         // TODO handle negative indices
         // TODO handle if not all components are present
@@ -112,10 +115,13 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
         model.triangular_faces.push_back({(*result)[0] - 1, (*result)[i] - 1, (*result)[i + 1] - 1});
       }
     }
-
+  } else if (line_label == "#") {
+    // Comment, skipping this line
+    success = true;
   } else {
-    std::cerr << "Unknown line type: " << line_label << "\n";
-    success = false;
+    // As not all line types are supported, if we find something else, don't abort, just skip the line
+    // std::cerr << "Unknown line type: " << line_label << "\n";
+    success = true;
   }
 
   return success;

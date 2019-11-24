@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <array>
+#include <iostream>
 
 #include <glm/glm.hpp>
 
@@ -18,4 +19,10 @@ struct Model {
   std::vector<std::array<glm::ivec3, 3>> triangular_faces;
 };
 
+namespace debug {
+std::ostream& operator<<(std::ostream& out, const glm::ivec3& vec);
+std::ostream& operator<<(std::ostream& out, const glm::vec4& vec);
+std::ostream& operator<<(std::ostream& out, const glm::vec3& vec);
+std::ostream& operator<<(std::ostream& out, const Model& model);
+}
 #endif

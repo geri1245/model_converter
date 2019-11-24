@@ -224,7 +224,11 @@ TEST_CASE("process_incorect_line", "[process_line]") {
 
   SECTION("invalid_line_prefix") {
     success = test.process_line("asd 12.000000       1.210000       1.000000", model);
-    REQUIRE(!success);
+    REQUIRE(success);
+    REQUIRE(model.positions.empty());
+    REQUIRE(model.texture_coords.empty());
+    REQUIRE(model.normals.empty());
+    REQUIRE(model.triangular_faces.empty());
   }
 
   SECTION("fewer_than_three positions") {
