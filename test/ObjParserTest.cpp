@@ -1,8 +1,8 @@
+#include <fstream>
+#include <iostream>
+#include <iterator>
 #include <memory>
 #include <sstream>
-#include <iostream>
-#include <fstream>
-#include <iterator>
 
 #include "catch/catch.hpp"
 
@@ -14,9 +14,7 @@ class ObjParserTest {
  public:
   ObjParserTest() : obj_parser{std::make_unique<ObjParser>()} {}
 
-  std::optional<Model> parse_file(std::istream& in) {
-    return obj_parser->parse_file(in);
-  }
+  std::optional<Model> parse_file(std::istream& in) { return obj_parser->parse_file(in); }
 
   bool process_line(std::string&& line, Model& model) { return obj_parser->process_line(std::move(line), model); }
 
@@ -90,31 +88,25 @@ TEST_CASE("process_line", "[process_line]") {
             std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{3, 3, 3}, glm::ivec3{22, 8988, 77}});
   }
 
-  // SECTION("faces_negative_numbers") {
-  //   model.positions.emplace_back(12, 1, 1, 3);   // position 0
-  //   model.positions.emplace_back(1, 11, 1, 32);  // position 1
-  //   model.positions.emplace_back(1, 1, 15, 3);   // position 2
-  //   model.positions.emplace_back(13, 1, 1, 3);   // position 3
-  //   model.positions.emplace_back(1, 12, 1, 3);   // position 4
+  SECTION("faces_negative_numbers") {
+    model.positions.emplace_back(13, 1, 1, 3);  // position 1
+    model.positions.emplace_back(1, 12, 1, 3);  // position 2
 
-  //   model.texture_coords.emplace_back(11, 1, 1);  // texture 0
-  //   model.texture_coords.emplace_back(1, 1, 15);  // texture 1
-  //   model.texture_coords.emplace_back(1, 14, 1);  // texture 2
-  //   model.texture_coords.emplace_back(11, 1, 1);  // texture 3
+    model.texture_coords.emplace_back(1, 14, 1);  // texture 1
+    model.texture_coords.emplace_back(11, 1, 1);  // texture 2
 
-  //   model.normals.emplace_back(2, 22, 2);  // normal 0
-  //   model.normals.emplace_back(2, 2, 23);  // normal 1
-  //   model.normals.emplace_back(22, 2, 2);  // normal 2
-  //   model.normals.emplace_back(2, 21, 2);  // normal 3
+    model.normals.emplace_back(2, 2, 23);  // normal 1
+    model.normals.emplace_back(22, 2, 2);  // normal 2
+    model.normals.emplace_back(2, 21, 2);  // normal 3
 
-  //   success = test.process_line("f 1/1/-1 2/1/2 -1/-2/12", model);
-  //   REQUIRE(success);
-  //   REQUIRE(model.triangular_faces.size() == 1);
-  //   REQUIRE(model.triangular_faces[0] ==
-  //           std::array<glm::ivec3, 3>{glm::ivec3{0, 0, model.normals.size() - 2},
-  //                                     glm::ivec3{1, 0, 1},
-  //                                     glm::ivec3{model.positions.size() - 2, model.texture_coords.size() - 3, 11}});
-  // }
+    success = test.process_line("f 1/1/-1 2/1/2 -1/-2/12", model);
+    REQUIRE(success);
+    REQUIRE(model.triangular_faces.size() == 1);
+    REQUIRE(model.triangular_faces[0] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, model.normals.size() - 1},
+                                      glm::ivec3{1, 0, 1},
+                                      glm::ivec3{model.positions.size() - 1, model.texture_coords.size() - 2, 11}});
+  }
 }
 
 TEST_CASE("correct_file", "[parse_file]") {
@@ -128,7 +120,7 @@ v 1.12 1.233 12.76
 f 1/1/1 2/2/2 3/4/6
 )";
 
-std::istringstream input_stream{line_to_process};
+    std::istringstream input_stream{line_to_process};
 
     auto result = test.parse_file(input_stream);
     REQUIRE(result);
@@ -172,27 +164,27 @@ TEST_CASE("correct_faces", "[process_faces]") {
     REQUIRE((*result)[5] == glm::ivec3{23, 98, 45});
   }
 
-  // SECTION("missing_textures") {
-  //   const std::string faces = "1//3 7//3 2//9";
-  //   const auto result       = test.process_faces(faces);
-  //   REQUIRE(result);
-  //   REQUIRE(result->size() == 3);
-  //   // TODO find out what to check here for textures
-  //   REQUIRE((*result)[0] == glm::ivec3{1, 0, 3});
-  //   REQUIRE((*result)[1] == glm::ivec3{7, 0, 3});
-  //   REQUIRE((*result)[2] == glm::ivec3{2, 0, 9});
-  // }
+  SECTION("missing_textures") {
+    const std::string faces = "1//3 7//3 2//9";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(result);
+    REQUIRE(result->size() == 3);
 
-  // SECTION("missing_normals") {
-  //   const std::string faces = "1/2/ 7/4/ 2/34/";
-  //   const auto result       = test.process_faces(faces);
-  //   REQUIRE(result);
-  //   REQUIRE(result->size() == 3);
-  //   // TODO find out what to check here for textures
-  //   REQUIRE((*result)[0] == glm::ivec3{1, 2, 0});
-  //   REQUIRE((*result)[1] == glm::ivec3{7, 4, 0});
-  //   REQUIRE((*result)[2] == glm::ivec3{2, 34, 0});
-  // }
+    REQUIRE((*result)[0] == glm::ivec3{1, 0, 3});
+    REQUIRE((*result)[1] == glm::ivec3{7, 0, 3});
+    REQUIRE((*result)[2] == glm::ivec3{2, 0, 9});
+  }
+
+  SECTION("missing_normals") {
+    const std::string faces = "1/2/ 7/4/ 2/34/";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(result);
+    REQUIRE(result->size() == 3);
+
+    REQUIRE((*result)[0] == glm::ivec3{1, 2,  0});
+    REQUIRE((*result)[1] == glm::ivec3{7, 4,  0});
+    REQUIRE((*result)[2] == glm::ivec3{2, 34, 0});
+  }
 }
 
 TEST_CASE("incorrect_faces", "[process_faces]") {
@@ -204,17 +196,17 @@ TEST_CASE("incorrect_faces", "[process_faces]") {
     REQUIRE(!result);
   }
 
-  // SECTION("missing_position") {
-  //   const std::string faces = "/2/3 /9/3 /3/9";
-  //   const auto result = test.process_faces(faces);
-  //   REQUIRE(!result);
-  // }
+  SECTION("missing_position") {
+    const std::string faces = "/2/3 /9/3 /3/9";
+    const auto result = test.process_faces(faces);
+    REQUIRE(!result);
+  }
 
-  // SECTION("different_format") {
-  //   const std::string faces = "23/2/3 423/9/ 53//9";
-  //   const auto result = test.process_faces(faces);
-  //   REQUIRE(!result);
-  // }
+  SECTION("different_format") {
+    const std::string faces = "23/2/3 423/9/ 53//9";
+    const auto result = test.process_faces(faces);
+    REQUIRE(!result);
+  }
 }
 
 TEST_CASE("process_incorect_line", "[process_line]") {

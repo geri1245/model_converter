@@ -17,6 +17,5 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${TEST_SOURCES})
 
 add_dependencies(${PROJECT_NAME} model_converter)
 
-# TODO: maybe replace ** with exact directories
 target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Parser")
 target_include_directories(${PROJECT_NAME} PUBLIC "${THIRDPARTY_DIR}")

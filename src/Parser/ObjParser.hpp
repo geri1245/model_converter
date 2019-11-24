@@ -22,6 +22,7 @@ class ObjParser : public ModelParser {
   virtual std::optional<Model> parse_file(std::istream& in) final override;
   bool process_line(std::string&& line, Model& model);
   std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string);
+  bool check_faces_vector_syntax(const std::vector<glm::ivec3> faces_vec);
 
   // Tries to read at least min, at most max numbers from text into container
   // Returns the number of arguments successfully read
@@ -63,6 +64,7 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
 
   if (line_label == "v") {
     glm::vec4 position;
+    // The w parameter is optional, default is 1.0
     position.w      = 1.0;
     std::size_t min = 3;
     std::size_t max = 4;
@@ -75,6 +77,7 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
     }
   } else if (line_label == "vt") {
     glm::vec3 texture;
+    // Y and Z are optional, their default is 0
     texture.y       = 0.0;
     texture.z       = 0.0;
     std::size_t min = 1;
@@ -104,15 +107,33 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
       std::cerr << "Error processing faces\n";
       success = false;
     } else if (result) {
-      // for(const auto & a : *result) {
-      //   std::cout << a << "\n";
-      // }
-      for (std::size_t i = 1; i + 1 < result->size(); ++i) {
-        // TODO handle negative indices
-        // TODO handle if not all components are present
+      // Preprocess all indices: if they are negative, transform them based on positions/normals/teytures size
+      // If they are positive or 0, subtract 1 from each to convert 1-based indices to 0-based
+      // If the index was 0 (indicates missing value), then it becomes -1, which is not valid for vector indexing
+      // So in the final representation -1 will indicate missing values
+      for (auto& vec3 : *result) {
+        vec3 -= 1;
 
-        // The indexing is 1-based in obj, convert it to 0-based
-        model.triangular_faces.push_back({(*result)[0] - 1, (*result)[i] - 1, (*result)[i + 1] - 1});
+        // Positions can't be missing, so an x value of 0 is an error
+        // Example line for this error: "f /2/3 /4/5 /8/23"
+        if (vec3.x == -1) {
+          return false;
+        } else if (vec3.x < -1) {
+          vec3.x = model.positions.size() + vec3.x + 1;
+        }
+
+        // For y and z -1 is a valid value, it means they were missing, so we only check for samller than -1 values
+        if (vec3.y < -1) {
+          vec3.y = model.texture_coords.size() + vec3.y + 1;
+        }
+        if (vec3.z < -1) {
+          vec3.z = model.normals.size() + vec3.z + 1;
+        }
+      }
+
+      // Non-triangular faces are handled by using "triangle-fan": inedx 0 is always present
+      for (std::size_t i = 1; i + 1 < result->size(); ++i) {
+        model.triangular_faces.push_back({(*result)[0], (*result)[i], (*result)[i + 1]});
       }
     }
   } else if (line_label == "#") {
@@ -120,7 +141,6 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
     success = true;
   } else {
     // As not all line types are supported, if we find something else, don't abort, just skip the line
-    // std::cerr << "Unknown line type: " << line_label << "\n";
     success = true;
   }
 
@@ -132,7 +152,6 @@ std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::strin
   faces_result.reserve(3);
   std::vector<std::string> faces = split_at_trim_separators(faces_string, ' ');
 
-  // TODO: check for missing textures/normals (no textures)
   for (const auto& face : faces) {
     std::vector<std::string> indices = split_at(face, '/');
 
@@ -145,10 +164,9 @@ std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::strin
 
     for (std::size_t i = 0; i < indices.size(); ++i) {
       if (indices[i].empty()) {
-        // TODO handle case of missing data
-      }
-
-      if (auto result = get_number_from_string<int>(indices[i]); result) {
+        // 0 is not a valid obj face index, so we can indicate missing values with it
+        vertex_data[i] = 0;
+      } else if (auto result = get_number_from_string<int>(indices[i]); result) {
         vertex_data[i] = result->first;
       } else {
         return std::nullopt;
@@ -158,7 +176,44 @@ std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::strin
     faces_result.push_back(std::move(vertex_data));
   }
 
+  if(!check_faces_vector_syntax(faces_result)) {
+    return std::nullopt;
+  }
+
   return faces_result;
+}
+
+bool ObjParser::check_faces_vector_syntax(const std::vector<glm::ivec3> faces_vec) {
+  // The syntax must be the same for all faces in the same line. So for example if there is no normal in the first
+  // triplet, there mustn't be normals in the later triplets either
+
+  if (faces_vec.empty()) {
+    return false;
+  }
+
+  std::array<bool, 3> elements_present;
+  elements_present.fill(true);
+
+  // Fill up the reference array based on the first triplet
+  for (glm::size_t i = 0; i < faces_vec[0].length(); ++i) {
+    elements_present[i] = faces_vec[0][i] != 0;
+  }
+
+  // Check all lines: if it should be present, but the index is 0 OR if it shouldn't be present but the index is not
+  // zero, then the syntax is incorrect and we return false
+  for (const auto& triplet : faces_vec) {
+    // Position can't be missing
+    if(triplet.x == 0) {
+      return false;
+    }
+    for (glm::size_t i = 1; i < faces_vec[0].length(); ++i) {
+      if ((elements_present[i] && triplet[i] == 0) || (!elements_present[i] && triplet[i] != 0)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 template <class Container>
