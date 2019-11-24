@@ -1,5 +1,9 @@
 #include "catch/catch.hpp"
 
+// GLM needs an extra define to enable transformations
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/transform.hpp>
+
 #include "Computations.hpp"
 
 TEST_CASE("intersection", "[RayIntersectsTriangle]") {
@@ -89,18 +93,16 @@ TEST_CASE("cube_intersections", "[num_of_intersections, is_point_inside_model]")
   }
 
   SECTION("is_point_inside") {
-    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.7,  0.2}, model));
-    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.9,  0.32}, model));
-    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.32, 0.7},  model));
+    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.7, 0.2}, model));
+    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.9, 0.32}, model));
+    REQUIRE(is_point_inside_model(glm::vec3{0.4, 0.32, 0.7}, model));
 
-    REQUIRE(!is_point_inside_model(glm::vec3{-0.4, 0.32, 0.7},  model));
-    REQUIRE(!is_point_inside_model(glm::vec3{0.4, 1.32, 0.7},  model));
-    REQUIRE(!is_point_inside_model(glm::vec3{0.4, 0.32, 21.7},  model));
+    REQUIRE(!is_point_inside_model(glm::vec3{-0.4, 0.32, 0.7}, model));
+    REQUIRE(!is_point_inside_model(glm::vec3{0.4, 1.32, 0.7}, model));
+    REQUIRE(!is_point_inside_model(glm::vec3{0.4, 0.32, 21.7}, model));
   }
 
-  SECTION("cube_area") {
-    REQUIRE(surface_area(model) == 6);
-  }
+  SECTION("cube_area") { REQUIRE(surface_area(model) == 6); }
 }
 
 TEST_CASE("simple_triangles", "[area_of_triangle]") {
@@ -109,4 +111,38 @@ TEST_CASE("simple_triangles", "[area_of_triangle]") {
 
   triangle = std::array<glm::vec3, 3>{glm::vec3{1, 0, 0}, glm::vec3{1, 1, 0}, glm::vec3{1, 1, 2}};
   REQUIRE(area_of_triangle(triangle) == 1.0);
+}
+
+TEST_CASE("transformations", "[transformations]") {
+  Model model;
+  model.positions.emplace_back(2.0, 1.0, 0.0, 1.0);
+  model.positions.emplace_back(3.0, 0.0, 3.0, 1.0);
+
+  SECTION("translate") {
+    transform(model, glm::translate(glm::vec3(1, 4, 2.23)));
+
+    REQUIRE(model.positions[0] == glm::vec4{3, 5, 2.23, 1});
+    REQUIRE(model.positions[1] == glm::vec4{4, 4, 5.23, 1});
+  }
+
+  SECTION("rotate") {
+    transform(model, glm::rotate(glm::pi<float>(), glm::vec3{0, 1, 0}));
+
+    REQUIRE(length(model.positions[0] - glm::vec4{-2, 1, 0, 1}) < 0.00001);
+    REQUIRE(length(model.positions[1] - glm::vec4{-3.0, 0.0, -3.0, 1.0}) < 0.00001);
+  }
+
+  SECTION("scale") {
+    transform(model, glm::scale(glm::vec3{2, 0.5, 1}));
+
+    REQUIRE(model.positions[0] == glm::vec4{4, 0.5, 0, 1});
+    REQUIRE(model.positions[1] == glm::vec4{6, 0, 3, 1});
+  }
+
+  SECTION("combined") {
+    transform(model, glm::scale(glm::vec3{2, 3, 1}) * glm::translate(glm::vec3{1, 0, -1}));
+
+    REQUIRE(model.positions[0] == glm::vec4{6, 3, -1, 1});
+    REQUIRE(model.positions[1] == glm::vec4{8, 0, 2, 1});
+  }
 }
