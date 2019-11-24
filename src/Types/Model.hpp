@@ -16,6 +16,7 @@ struct Model {
   std::vector<glm::vec3> texture_coords;
   std::vector<glm::vec3> normals;
   // Vector containing 3-element arrays, each array containing a triangular face data (position, texture, normal)
+  // So x is the position vector index, y is texture index and z is normal vector index
   std::vector<std::array<glm::ivec3, 3>> triangular_faces;
 };
 

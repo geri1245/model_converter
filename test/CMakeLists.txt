@@ -19,4 +19,5 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${TEST_SOURCES})
 add_dependencies(${PROJECT_NAME} model_converter)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Parser")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}/Computations")
 target_include_directories(${PROJECT_NAME} PUBLIC "${THIRDPARTY_DIR}")
