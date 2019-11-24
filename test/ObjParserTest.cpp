@@ -1,4 +1,8 @@
 #include <memory>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <iterator>
 
 #include "catch/catch.hpp"
 
@@ -10,19 +14,22 @@ class ObjParserTest {
  public:
   ObjParserTest() : obj_parser{std::make_unique<ObjParser>()} {}
 
+  std::optional<Model> parse_file(std::istream& in) {
+    return obj_parser->parse_file(in);
+  }
+
   bool process_line(std::string&& line, Model& model) { return obj_parser->process_line(std::move(line), model); }
 
-  template <class Result>
-  std::optional<std::pair<Result, std::size_t>> get_number_from_string(const std::string& text) {
-    return obj_parser->get_number_from_string<Result>(text);
+  std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string) {
+    return obj_parser->process_faces(faces_string);
   }
 
   template <class Container>
   std::optional<int> read_numbers(const std::string& text,
-                   std::size_t text_position,
-                   Container& container,
-                   const std::size_t min,
-                   const std::size_t max) {
+                                  std::size_t text_position,
+                                  Container& container,
+                                  const std::size_t min,
+                                  const std::size_t max) {
     return obj_parser->read_numbers(text, text_position, container, min, max);
   }
 
@@ -35,7 +42,7 @@ TEST_CASE("process_line", "[process_line]") {
   Model model;
   bool success = false;
 
-  SECTION("Correct position") {
+  SECTION("Correct_position") {
     success = test.process_line("v      -5.000000       5.000000       0.000000", model);
     REQUIRE(success);
     REQUIRE(model.positions.size() == 1);
@@ -49,30 +56,165 @@ TEST_CASE("process_line", "[process_line]") {
     REQUIRE(model.positions[0] == glm::vec4(-5, 5, 0, 2.5));
   }
 
-SECTION("Correct texture") {
-  success = test.process_line("vt     -5.000000      -5.000000       0.000000", model);
-  REQUIRE(success);
-  REQUIRE(model.texture_coords.size() == 1);
-  REQUIRE(model.texture_coords[0] == glm::vec3(-5, -5, 0));
+  SECTION("Correct_texture") {
+    success = test.process_line("vt     -5.000000      -5.000000       0.000000", model);
+    REQUIRE(success);
+    REQUIRE(model.texture_coords.size() == 1);
+    REQUIRE(model.texture_coords[0] == glm::vec3(-5, -5, 0));
+  }
+
+  SECTION("Correct_normal") {
+    success = test.process_line("vn      12.000000       1.210000       1.000000", model);
+    REQUIRE(success);
+    REQUIRE(model.normals.size() == 1);
+    REQUIRE(model.normals[0] == glm::vec3(12, 1.21, 1));
+  }
+
+  SECTION("Correct_faces") {
+    success = test.process_line("f 1/1/1     2/2/2    3/3/3  ", model);
+    REQUIRE(success);
+    REQUIRE(model.triangular_faces.size() == 1);
+    REQUIRE(model.triangular_faces[0] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 1}, glm::ivec3{2, 2, 2}});
+  }
+
+  SECTION("Correct_faces_multiple_faces") {
+    success = test.process_line("f 1/1/1 2/2/2 3/3/3 4/4/4 23/8989/78", model);
+    REQUIRE(success);
+    REQUIRE(model.triangular_faces.size() == 3);
+    REQUIRE(model.triangular_faces[0] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 1}, glm::ivec3{2, 2, 2}});
+    REQUIRE(model.triangular_faces[1] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{2, 2, 2}, glm::ivec3{3, 3, 3}});
+    REQUIRE(model.triangular_faces[2] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{3, 3, 3}, glm::ivec3{22, 8988, 77}});
+  }
+
+  // SECTION("faces_negative_numbers") {
+  //   model.positions.emplace_back(12, 1, 1, 3);   // position 0
+  //   model.positions.emplace_back(1, 11, 1, 32);  // position 1
+  //   model.positions.emplace_back(1, 1, 15, 3);   // position 2
+  //   model.positions.emplace_back(13, 1, 1, 3);   // position 3
+  //   model.positions.emplace_back(1, 12, 1, 3);   // position 4
+
+  //   model.texture_coords.emplace_back(11, 1, 1);  // texture 0
+  //   model.texture_coords.emplace_back(1, 1, 15);  // texture 1
+  //   model.texture_coords.emplace_back(1, 14, 1);  // texture 2
+  //   model.texture_coords.emplace_back(11, 1, 1);  // texture 3
+
+  //   model.normals.emplace_back(2, 22, 2);  // normal 0
+  //   model.normals.emplace_back(2, 2, 23);  // normal 1
+  //   model.normals.emplace_back(22, 2, 2);  // normal 2
+  //   model.normals.emplace_back(2, 21, 2);  // normal 3
+
+  //   success = test.process_line("f 1/1/-1 2/1/2 -1/-2/12", model);
+  //   REQUIRE(success);
+  //   REQUIRE(model.triangular_faces.size() == 1);
+  //   REQUIRE(model.triangular_faces[0] ==
+  //           std::array<glm::ivec3, 3>{glm::ivec3{0, 0, model.normals.size() - 2},
+  //                                     glm::ivec3{1, 0, 1},
+  //                                     glm::ivec3{model.positions.size() - 2, model.texture_coords.size() - 3, 11}});
+  // }
 }
 
-SECTION("Correct normal") {
-  success = test.process_line("vn      12.000000       1.210000       1.000000", model);
-  REQUIRE(success);
-  REQUIRE(model.normals.size() == 1);
-  REQUIRE(model.normals[0] == glm::vec3(12, 1.21, 1));
+TEST_CASE("correct_file", "[parse_file]") {
+  ObjParserTest test;
+  SECTION("Regular_file") {
+    std::string line_to_process =
+        R"(v 12.0 11.23 32.42
+vt 0.23 0.34
+vn 1.01 2.12 0.12
+v 1.12 1.233 12.76
+f 1/1/1 2/2/2 3/4/6
+)";
+
+std::istringstream input_stream{line_to_process};
+
+    auto result = test.parse_file(input_stream);
+    REQUIRE(result);
+    REQUIRE(result->positions.size() == 2);
+    REQUIRE(result->texture_coords.size() == 1);
+    REQUIRE(result->normals.size() == 1);
+    REQUIRE(result->triangular_faces.size() == 1);
+
+    REQUIRE(result->positions[0] == glm::vec4{12.0, 11.23, 32.42, 1.0});
+    REQUIRE(result->positions[1] == glm::vec4{1.12, 1.233, 12.76, 1.0});
+    REQUIRE(result->texture_coords[0] == glm::vec3{0.23, 0.34, 0.0});
+    REQUIRE(result->normals[0] == glm::vec3{1.01, 2.12, 0.12});
+    REQUIRE(result->triangular_faces[0] ==
+            std::array<glm::ivec3, 3>{glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 1}, glm::ivec3{2, 3, 5}});
+  }
 }
 
-// // TODO: more testing on faces
-// SECTION("Correct faces") {
-//   success = test.process_line("f 1/1/1 2/2/2 3/3/3 4/4/4", model);
-//   REQUIRE(success);
-//   REQUIRE(model.triangular_faces.size() == 2);
-//   REQUIRE(model.triangular_faces[0] ==
-//           std::array<glm::ivec3, 3>{glm::ivec3{1, 1, 1}, glm::ivec3{2, 2, 2}, glm::ivec3{3, 3, 3}});
-//   REQUIRE(model.triangular_faces[1] ==
-//           std::array<glm::ivec3, 3>{glm::ivec3{3, 3, 3}, glm::ivec3{2, 2, 2}, glm::ivec3{4, 4, 4}});
-// }
+TEST_CASE("correct_faces", "[process_faces]") {
+  ObjParserTest test;
+
+  SECTION("triplets") {
+    const std::string faces = "1/2/3 7/9/3 2/3/9";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(result);
+    REQUIRE(result->size() == 3);
+    REQUIRE((*result)[0] == glm::ivec3{1, 2, 3});
+    REQUIRE((*result)[1] == glm::ivec3{7, 9, 3});
+    REQUIRE((*result)[2] == glm::ivec3{2, 3, 9});
+  }
+
+  SECTION("6_elements") {
+    const std::string faces = "1/2/3 7/9/3 2/3/9 34/78/98 12/34/78 23/98/45";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(result);
+    REQUIRE(result->size() == 6);
+    REQUIRE((*result)[0] == glm::ivec3{1, 2, 3});
+    REQUIRE((*result)[1] == glm::ivec3{7, 9, 3});
+    REQUIRE((*result)[2] == glm::ivec3{2, 3, 9});
+    REQUIRE((*result)[3] == glm::ivec3{34, 78, 98});
+    REQUIRE((*result)[4] == glm::ivec3{12, 34, 78});
+    REQUIRE((*result)[5] == glm::ivec3{23, 98, 45});
+  }
+
+  // SECTION("missing_textures") {
+  //   const std::string faces = "1//3 7//3 2//9";
+  //   const auto result       = test.process_faces(faces);
+  //   REQUIRE(result);
+  //   REQUIRE(result->size() == 3);
+  //   // TODO find out what to check here for textures
+  //   REQUIRE((*result)[0] == glm::ivec3{1, 0, 3});
+  //   REQUIRE((*result)[1] == glm::ivec3{7, 0, 3});
+  //   REQUIRE((*result)[2] == glm::ivec3{2, 0, 9});
+  // }
+
+  // SECTION("missing_normals") {
+  //   const std::string faces = "1/2/ 7/4/ 2/34/";
+  //   const auto result       = test.process_faces(faces);
+  //   REQUIRE(result);
+  //   REQUIRE(result->size() == 3);
+  //   // TODO find out what to check here for textures
+  //   REQUIRE((*result)[0] == glm::ivec3{1, 2, 0});
+  //   REQUIRE((*result)[1] == glm::ivec3{7, 4, 0});
+  //   REQUIRE((*result)[2] == glm::ivec3{2, 34, 0});
+  // }
+}
+
+TEST_CASE("incorrect_faces", "[process_faces]") {
+  ObjParserTest test;
+
+  SECTION("non-numbers") {
+    const std::string faces = "1/2/3 asd7/9/3 2/3/9";
+    const auto result       = test.process_faces(faces);
+    REQUIRE(!result);
+  }
+
+  // SECTION("missing_position") {
+  //   const std::string faces = "/2/3 /9/3 /3/9";
+  //   const auto result = test.process_faces(faces);
+  //   REQUIRE(!result);
+  // }
+
+  // SECTION("different_format") {
+  //   const std::string faces = "23/2/3 423/9/ 53//9";
+  //   const auto result = test.process_faces(faces);
+  //   REQUIRE(!result);
+  // }
 }
 
 TEST_CASE("process_incorect_line", "[process_line]") {
@@ -98,55 +240,6 @@ TEST_CASE("process_incorect_line", "[process_line]") {
   SECTION("Junk_in_the_middle") {
     success = test.process_line("v      -5.000000       5.000000   asd    0.000000   2.500000", model);
     REQUIRE(!success);
-  }
-}
-
-TEST_CASE("successful_get_number_from_string", "[get_number_from_string]") {
-  ObjParserTest test;
-
-  SECTION("regular_number_with_whitespaces") {
-    const std::string str_to_process{"    3.1415"};
-    auto result = test.get_number_from_string<double>(str_to_process);
-
-    REQUIRE(result);
-    REQUIRE(result->first == 3.1415);
-    REQUIRE(result->second == str_to_process.size());
-  }
-
-  SECTION("negative_number") {
-    const std::string str_to_process{"-2.45"};
-    auto result = test.get_number_from_string<double>(str_to_process);
-
-    REQUIRE(result);
-    REQUIRE(result->first == -2.45);
-    REQUIRE(result->second == str_to_process.size());
-  }
-
-  SECTION("integer") {
-    const std::string str_to_process{"145784"};
-    auto result = test.get_number_from_string<int>(str_to_process);
-
-    REQUIRE(result);
-    REQUIRE(result->first == std::stoi(str_to_process));
-    REQUIRE(result->second == str_to_process.size());
-  }
-}
-
-TEST_CASE("unsuccessful_get_number_from_string", "[get_number_from_string]") {
-  ObjParserTest test;
-
-  SECTION("character_with_whitespaces") {
-    const std::string str_to_process{"    a.1415"};
-    auto result = test.get_number_from_string<double>(str_to_process);
-
-    REQUIRE(!result);
-  }
-
-  SECTION("character_without_whitespaces") {
-    const std::string str_to_process{"-aasd"};
-    auto result = test.get_number_from_string<double>(str_to_process);
-
-    REQUIRE(!result);
   }
 }
 

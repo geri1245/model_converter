@@ -9,6 +9,7 @@
 #include <string_view>
 
 #include "ModelParser.hpp"
+#include "StringMethods.hpp"
 
 class ObjParser : public ModelParser {
  public:
@@ -18,12 +19,9 @@ class ObjParser : public ModelParser {
 #ifdef OBJ_PARSER_UNITTEST
   friend class ObjParserTest;
 #endif
-  virtual std::optional<Model> parse_file(std::ifstream& in) final override;
+  virtual std::optional<Model> parse_file(std::istream& in) final override;
   bool process_line(std::string&& line, Model& model);
-
-  // Tries to read a number from text and returns an optional (value, characters_processed) pair
-  template <class Result>
-  std::optional<std::pair<Result, std::size_t>> get_number_from_string(const std::string& text);
+  std::optional<std::vector<glm::ivec3>> process_faces(const std::string_view& faces_string);
 
   // Tries to read at least min, at most max numbers from text into container
   // Returns the number of arguments successfully read
@@ -36,20 +34,20 @@ class ObjParser : public ModelParser {
 };
 
 
-std::optional<Model> ObjParser::parse_file(std::ifstream& in) {
+std::optional<Model> ObjParser::parse_file(std::istream& in) {
   Model model;
   std::string line;
 
   bool success        = true;
   int lines_processed = 0;
-  
+
   while (std::getline(in, line) && success) {
     success = success && process_line(std::move(line), model);
     line.clear();
     ++lines_processed;
   }
 
-  if(!success) {
+  if (!success) {
     std::cerr << "Failed to read line " << lines_processed << "\n";
     return std::nullopt;
   }
@@ -100,13 +98,61 @@ bool ObjParser::process_line(std::string&& line, Model& model) {
       model.normals.push_back(std::move(normals));
     }
   } else if (line_label == "f") {
-    // TODO
+    auto result = process_faces(std::string_view{line.data() + first_whitespace, line.size() - first_whitespace});
+
+    if (!result) {
+      std::cerr << "Error processing faces\n";
+      success = false;
+    } else if (result) {
+      for (std::size_t i = 1; i + 1 < result->size(); ++i) {
+        // TODO handle negative indices
+        // TODO handle if not all components are present
+
+        // The indexing is 1-based in obj, convert it to 0-based
+        model.triangular_faces.push_back({(*result)[0] - 1, (*result)[i] - 1, (*result)[i + 1] - 1});
+      }
+    }
+
   } else {
     std::cerr << "Unknown line type: " << line_label << "\n";
-    return success = false;
+    success = false;
   }
 
   return success;
+}
+
+std::optional<std::vector<glm::ivec3>> ObjParser::process_faces(const std::string_view& faces_string) {
+  std::vector<glm::ivec3> faces_result;
+  faces_result.reserve(3);
+  std::vector<std::string> faces = split_at_trim_separators(faces_string, ' ');
+
+  // TODO: check for missing textures/normals (no textures)
+  for (const auto& face : faces) {
+    std::vector<std::string> indices = split_at(face, '/');
+
+    // There were more than 2 slashes for one vertex data
+    if (indices.size() > 3) {
+      return std::nullopt;
+    }
+
+    glm::ivec3 vertex_data;
+
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      if (indices[i].empty()) {
+        // TODO handle case of missing data
+      }
+
+      if (auto result = get_number_from_string<int>(indices[i]); result) {
+        vertex_data[i] = result->first;
+      } else {
+        return std::nullopt;
+      }
+    }
+
+    faces_result.push_back(std::move(vertex_data));
+  }
+
+  return faces_result;
 }
 
 template <class Container>
@@ -141,33 +187,6 @@ std::optional<std::size_t> ObjParser::read_numbers(const std::string& text,
   }
 
   return numbers_read;
-}
-
-template <class Result>
-std::optional<std::pair<Result, std::size_t>> ObjParser::get_number_from_string(const std::string& text) {
-  std::size_t chars_processed = 0;
-  Result result               = 0;
-
-  try {
-    if constexpr (std::is_floating_point_v<Result>) {
-      result = std::stod(text, &chars_processed);
-    } else if (std::is_integral_v<Result>) {
-      result = std::stoi(text, &chars_processed);
-    } else {
-      std::cerr << "Please give a number as template parameter of \"get_number_from_string\"\n";
-    }
-  } catch (const std::exception& ex) {
-    return std::nullopt;
-  }
-
-  // from_chars is not yet available for floating points with g++ 8.3
-  // auto [first_not_matching, parse_result] = std::from_chars(text.data(), text.data() + text.size(), result);
-
-  // if(parse_result == std::errc()) {
-  //   return std::nullopt;
-  // }
-
-  return std::make_pair(result, chars_processed);
 }
 
 #endif

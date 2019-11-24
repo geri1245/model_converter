@@ -16,7 +16,7 @@ public:
 
 protected:
   virtual std::optional<std::ifstream> open_file(const std::string& path) const;
-  virtual std::optional<Model> parse_file(std::ifstream& in) = 0;
+  virtual std::optional<Model> parse_file(std::istream& in) = 0;
 };
 
 #endif
