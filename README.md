@@ -23,7 +23,7 @@ sudo apt-get install cmake make libglm-dev
 ### Building the application
 
 ```bash
-cd shaper
+cd model_converter
 mkdir build && cd build
 cmake ..
 make -j8
